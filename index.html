@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Content Price Calculator</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        padding: 20px;
+        color: #333;
+    }
+    
+    h2 {
+        color: #007bff;
+        text-align: center;
+    }
+    
+    .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    
+    input[type="number"], select {
+        width: calc(100% - 22px);
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    
+    table, th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    
+    th {
+        background-color: #f2f2f2;
+        text-align: left;
+    }
+    
+    td {
+        text-align: right;
+    }
+    
+    td:first-child, th:first-child {
+        text-align: left;
+    }
+
+    button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-right: 10px;
+    }
+    
+    button:hover {
+        background-color: #0056b3;
+    }
+    
+    button.remove {
+        background-color: #dc3545;
+    }
+    
+    button.remove:hover {
+        background-color: #c82333;
+    }
+    
+    #requestQuote {
+        display: none;
+    }
+
+    tfoot td {
+        font-weight: bold;
+    }
+
+    .option-group {
+        background-color: #e9f5ff;
+        font-weight: bold;
+    }
+
+    .sub-option {
+        padding-left: 30px;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Training Content Price Calculator</h2>
+
+    <table id="courseTable">
+        <thead>
+            <tr>
+                <th>Option</th>
+                <th>Subcategory</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+                <th>Unit Price (R)</th>
+                <th>Total (R)</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Rows will be added dynamically -->
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5"><strong>Overall Total (R)</strong></td>
+                <td id="overallTotal">R0</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <button type="button" onclick="addOptionRow()">Add Option</button><br><br>
+
+    <label for="companyName">Company Name:</label>
+    <input type="text" id="companyName" required><br><br>
+
+    <label for="requestedBy">Requested by (Your Name):</label>
+    <input type="text" id="requestedBy" required><br><br>
+    
+    <button id="requestQuote" onclick="requestQuote()">Request Formal Quote</button>
+</div>
+
+<script>
+    const options = {
+        "Option A: Role play in video format": {
+            description: "Role play in video format",
+            subcategories: [
+                { name: "Actors, Studio & Film producer & Script", price: 25000, unit: "hourly" },
+
+            ]
+        },
+        "Option B: Animation & Voice over": {
+            description: "Animation & Voice over",
+            subcategories: [
+                { name: "Instructional Design", price: 1200, unit: "hourly" },
+                { name: "Content Development/Conversion", price: 950, unit: "hourly" },
+                { name: "Voice overs", price: 20, unit: "per word" }
+            ]
+        },
+        "Option C: Interactive Reading format": {
+            description: "Interactive Reading format",
+            subcategories: [
+                { name: "Content Development/Conversion", price: 950, unit: "per hour" },
+                { name: "Quizzes", price: 950, unit: "per hour" },
+                { name: "Assessments", price: 950, unit: "per hour" }
+            ]
+        },
+        "Option D: Reading matter": {
+            description: "Reading matter",
+            subcategories: [
+                { name: "Content Development/Conversion", price: 950, unit: "per hour" },
+                { name: "Quizzes", price: 950, unit: "per hour" },
+                { name: "Assessments", price: 950, unit: "per hour" }
+            ]
+        }
+    };
+
+    function addOptionRow(optionKey = null, subcategoryIndex = null) {
+        const tableBody = document.querySelector('#courseTable tbody');
+        const newRow = document.createElement('tr');
+        
+        if (!optionKey) {
+            // Add option selector row
+            newRow.classList.add('option-group');
+            newRow.innerHTML = `
+                <td colspan="7">
+                    <select class="option-select" onchange="addSubcategoryRows(this)">
+                        <option value="">Select an option</option>
+                        ${Object.keys(options).map(key => `<option value="${key}">${key}</option>`).join('')}
+                    </select>
+                </td>
+            `;
+            tableBody.appendChild(newRow);
+        } else {
+            // Add subcategory row
+            const option = options[optionKey];
+            const subcategory = option.subcategories[subcategoryIndex];
+            
+            newRow.classList.add('sub-option');
+            newRow.innerHTML = `
+                <td>${option.description}</td>
+                <td>${subcategory.name}</td>
+                <td><input type="number" class="quantity" min="1" value="1" required></td>
+                <td>${subcategory.unit}</td>
+                <td class="unit-price">${subcategory.price === 0 ? '<input type="number" class="custom-price" min="0" value="0">' : formatNumber(subcategory.price)}</td>
+                <td class="total-price">${subcategory.price === 0 ? '0' : formatNumber(subcategory.price)}</td>
+                <td><button type="button" class="remove" onclick="removeCourseRow(this)">Remove</button></td>
+            `;
+            
+            // Insert after the option selector row
+            const optionRows = document.querySelectorAll('.option-group');
+            const lastOptionRow = optionRows[optionRows.length - 1];
+            lastOptionRow.insertAdjacentElement('afterend', newRow);
+            
+            // Add event listeners for dynamic pricing
+            const quantityInput = newRow.querySelector('.quantity');
+            const customPriceInput = newRow.querySelector('.custom-price');
+            
+            if (quantityInput) {
+                quantityInput.addEventListener('input', calculatePrice);
+            }
+            
+            if (customPriceInput) {
+                customPriceInput.addEventListener('input', calculatePrice);
+            }
+        }
+        
+        calculatePrice();
+    }
+
+    function addSubcategoryRows(selectElement) {
+        const optionKey = selectElement.value;
+        if (!optionKey) return;
+        
+        const option = options[optionKey];
+        const optionRow = selectElement.closest('tr');
+        
+        // Remove any existing subcategory rows for this option
+        let nextRow = optionRow.nextElementSibling;
+        while (nextRow && nextRow.classList.contains('sub-option')) {
+            const toRemove = nextRow;
+            nextRow = nextRow.nextElementSibling;
+            toRemove.remove();
+        }
+        
+        // Add rows for each subcategory
+        option.subcategories.forEach((subcategory, index) => {
+            addOptionRow(optionKey, index);
+        });
+    }
+
+    function removeCourseRow(button) {
+        const row = button.closest('tr');
+        if (row.classList.contains('option-group')) {
+            // Remove all associated subcategory rows
+            let nextRow = row.nextElementSibling;
+            while (nextRow && nextRow.classList.contains('sub-option')) {
+                const toRemove = nextRow;
+                nextRow = nextRow.nextElementSibling;
+                toRemove.remove();
+            }
+        }
+        row.remove();
+        calculatePrice();
+    }
+
+    function formatNumber(number) {
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    function calculatePrice() {
+        const rows = document.querySelectorAll('#courseTable tbody tr.sub-option');
+        let totalPrice = 0;
+
+        rows.forEach(row => {
+            const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+            let unitPrice;
+            
+            const customPriceInput = row.querySelector('.custom-price');
+            if (customPriceInput) {
+                unitPrice = parseFloat(customPriceInput.value) || 0;
+            } else {
+                unitPrice = parseFloat(row.querySelector('.unit-price').textContent.replace(/,/g, '')) || 0;
+            }
+
+            const total = quantity * unitPrice;
+            row.querySelector('.total-price').textContent = formatNumber(total);
+            totalPrice += total;
+        });
+
+        document.getElementById('overallTotal').textContent = `R${formatNumber(totalPrice)}`;
+        document.getElementById('requestQuote').style.display = totalPrice > 0 ? 'block' : 'none';
+    }
+
+    function requestQuote() {
+        const rows = document.querySelectorAll('#courseTable tbody tr');
+        const companyName = document.getElementById('companyName').value;
+        const requestedBy = document.getElementById('requestedBy').value;
+        let emailBody = `Company Name: ${companyName}\nRequested by: ${requestedBy}\n\nSelected Options:\n`;
+
+        let currentOption = '';
+        rows.forEach(row => {
+            if (row.classList.contains('option-group')) {
+                const select = row.querySelector('select');
+                if (select && select.value) {
+                    currentOption = select.value;
+                    emailBody += `\n${currentOption}\n`;
+                }
+            } else if (row.classList.contains('sub-option')) {
+                const subcategory = row.querySelector('td:nth-child(2)').textContent;
+                const quantity = row.querySelector('.quantity').value;
+                const unit = row.querySelector('td:nth-child(4)').textContent;
+                const unitPrice = row.querySelector('.unit-price').textContent;
+                const totalPrice = row.querySelector('.total-price').textContent;
+                
+                emailBody += `- ${subcategory}: ${quantity} ${unit} @ R${unitPrice} = R${totalPrice}\n`;
+            }
+        });
+
+        const totalPrice = document.getElementById('overallTotal').textContent;
+        emailBody += `\nTotal Price: ${totalPrice}\n\nAdditional Notes:`;
+
+        const subject = `Training Content Quote Request from ${requestedBy} on behalf of ${companyName}`;
+    const mailtoLink = `mailto:hano@estudysa.co.za?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+    window.location.href = mailtoLink;
+
+    }
+
+    // Auto-update the total when the quantity changes
+    document.addEventListener('input', (event) => {
+        if (event.target.classList.contains('quantity') || event.target.classList.contains('custom-price')) {
+            calculatePrice();
+        }
+    });
+</script>
+</body>
+</html>
